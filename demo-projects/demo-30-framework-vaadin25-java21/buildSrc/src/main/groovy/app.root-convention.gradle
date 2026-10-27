@@ -1,0 +1,55 @@
+plugins {
+    id 'base'  // the base plugin configures the 'clean' task
+    id 'project-report'
+}
+
+group = 'de.emesit'
+
+reporting {
+    baseDirectory = rootProject.layout.buildDirectory.dir("reports")
+}
+tasks.named('htmlDependencyReport', HtmlDependencyReportTask) {
+    projects = project.subprojects
+}
+
+defaultTasks 'usage'
+
+// hint for the user, when './gradlew tasks' is called:
+tasks.register("generateDiagrams") {
+    group = "Documentation"
+    description = "Generates Class Diagrams with plantuml."
+}
+
+tasks.register("usage") {
+    group = "Help"
+    description = "Shows useful information on how to build and run this project."
+
+    // To suppress the gradle warning
+    //   "Invocation of Task.project at execution time has been deprecated"
+    // we have to save the project name and version in a separate variable
+    // before using it in the 'doLast' block:
+    def appNameProvider    = providers.provider { project.name }
+    def appVersionProvider = providers.provider { project.version }
+    
+    doLast {
+        def appName    = appNameProvider.get()
+        def appVersion = appVersionProvider.get()
+        
+        println("""
+        ====================================================================
+        APPLICATION ${appName}
+        ====================================================================
+        run this project in development mode:
+          ./gradlew  bootRun
+          or
+          run it from the IDE
+        
+        build/run production-ready (calls vaadinBuildFrontend):
+          ./gradlew -Pvaadin.productionMode=true  clean build
+          then
+          java -jar build/libs/${appName}-${appVersion}.jar --vaadin.productionMode=true
+        
+        ====================================================================
+        """.stripIndent())
+    }
+}

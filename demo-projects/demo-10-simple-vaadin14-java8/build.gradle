@@ -1,0 +1,105 @@
+buildscript {
+    configurations {
+        classpath {
+            resolutionStrategy {
+                // newer bytebuddy version for compiling vaadin 14 with jdk21
+                // ('vaadinBuildFrontend' fails otherwise)
+                force( "net.bytebuddy:byte-buddy:1.14.3" )
+            }
+        }
+    }
+}
+plugins {
+    id 'java'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot'        version '2.7.18'
+    id 'com.vaadin'                      version '0.14.10.4'
+}
+
+// The gradle warnings:
+//   - [warn]  The org.gradle.api.plugins.Convention type has been deprecated.
+//   - [warn]  The org.gradle.api.plugins.Convention type has been deprecated.
+//   - [warn]  The org.gradle.api.plugins.JavaPluginConvention type has been deprecated.
+// you will see in file
+//   build/reports/problems/problems-report.html
+// come from the VaadinFlowPluginExtension, which is part of the old vaadin plugin (0.14.10.4)
+// Since this is an old gradle plugin and we use gradle 8.14.5, we can ignore these.
+// As long as we don't upgrade to gradle 9, everything works ok.
+//
+// To get rid of these warnings, I created the gradle.properties file in the project root
+// with the following contents:
+//   org.gradle.warning.mode=none
+//   org.gradle.problems.report=false
+// It is safe to delete the gradle.properties file, if you wish to see these warnings.
+
+
+group = 'de.emesit'
+version = '1.0.0'
+
+// To suppress the gradle warning
+//   "Invocation of Task.project at execution time has been deprecated"
+// we have to save the project name and version in a separate variable
+// before using it in the 'usage' task:
+def appName    = project.name
+def appVersion = project.version
+
+defaultTasks 'usage'
+
+tasks.register("usage") {
+    group = "Help"
+    description = "Shows useful information on how to build and run this project."
+
+    doLast {
+        println("""
+        ====================================================================
+        APPLICATION ${appName}
+        ====================================================================
+        run this project in development mode (with webpack-dev-server):
+          ./gradlew  bootRun
+          or
+          run it from the IDE
+        
+        build/run production-ready (calls vaadinBuildFrontend):
+          ./gradlew -Pvaadin.productionMode=true  clean build
+          then
+          java -jar build/libs/${appName}-${appVersion}.jar --vaadin.productionMode=true
+        
+        
+        Make sure to run
+          ./gradlew build
+        once after checkout, to run project in your IDE
+        ====================================================================
+        """.stripIndent())
+    }
+}
+
+ext {
+    set('vaadinVersion', '14.11.13')
+}
+
+vaadin {
+    // to use '-Pvaadin.productionMode' we need the entry below, otherwise only '-Dvaadin.productionMode' is possible
+    productionMode = project.hasProperty('vaadin.productionMode') ? project.property('vaadin.productionMode').toBoolean() : false
+}
+
+dependencies {
+    implementation      'com.vaadin:vaadin-spring-boot-starter'
+    implementation      'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly         'com.h2database:h2'
+    
+    testImplementation  'org.springframework.boot:spring-boot-starter-test'
+    
+    // dependency 'junit-platform-launcher' is necessary to start junit tests from eclipse:
+    testRuntimeOnly     'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "com.vaadin:vaadin-bom:${vaadinVersion}"
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+

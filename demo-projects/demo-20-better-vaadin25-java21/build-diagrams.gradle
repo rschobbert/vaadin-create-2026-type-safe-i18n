@@ -1,0 +1,306 @@
+//
+// --- BUILD CLASS DIAGRAMS ---
+//
+// Separate buildfile for generating class diagrams, to not 'pollute'
+// the standard buildfile with plantuml dependencies.
+// See also comments in settings.gradle, where the actual switching is done.
+//
+
+plugins {
+    id 'java'
+    alias(libs.plugins.springboot)
+    alias(libs.plugins.vaadin)
+    alias(libs.plugins.plantuml)
+}
+
+// to make sure, this buildfile is called the standard way via
+//   ./gradlew generateDiagrams
+// and not with '-b', which is still possible in gradle 8.
+// (in gradle 9 this argument has been removed)
+// The switching of the buildfile is done in settings.gradle!
+if (gradle.startParameter.taskNames.size() != 1 || gradle.startParameter.taskNames[0] != 'generateDiagrams') {
+    throw new GradleException('You cannot use this buildfile standalone with "-b" argument')
+}
+
+description = 'generate class diagrams with plantuml'
+
+ext {
+    projectMainPackage = 'de.emesit.demo'
+    diagramOutput     = 'doc/generated'
+    renderFormats     = ['svg']
+    createdSvgFiles   = []
+    diagramsHtmlFile  = 'diagrams.html'  // write an html file for local viewing
+    diagramsMdFile    = 'diagrams.md'    // write a markdown file for online viewing e.g. github
+}
+
+configurations { 
+    plantuml
+}
+
+dependencies {
+    plantuml        libs.plantuml
+    implementation  platform(libs.bom.springboot)
+    implementation  platform(libs.bom.vaadin)
+    implementation  libs.bundles.app.impl
+}
+
+classDiagrams {
+    renderClasspath  configurations.plantuml
+    defaults {
+        style {
+            skinparam "linetype", "ortho"
+        }
+    }
+    
+    
+    classDiagram {
+        name("UI Package / Application Overview")
+        style {
+//            directionLR()
+            hidePackages()
+            skinparam "nodesep", "170"
+            skinparam "ranksep", "30"
+
+            define "SpringbootApplicationColor", "#back:PapayaWhip;line.bold"
+            define "UiClassColor", "#back:SandyBrown;line.bold"
+            addStyle("<< SpringBootApplication >> SpringbootApplicationColor").to(classes().withName("de.emesit.demo.Demo20BetterApplication"))
+            addStyle("<< UIClass >> UiClassColor").to(classes().withNameLike("de.emesit.demo.ui.*"))
+            addStyle("<< Configuration >>").to(classes().withNameLike("de.emesit.demo.I18nConfig"))
+            addStyle("<< CommandLineRunner >>").to(classes().withNameLike("de.emesit.demo.TranslationInitializer"))
+        }
+        include classes() .withName("de.emesit.demo.Demo20BetterApplication")
+        include classes() .withName("de.emesit.demo.TranslationInitializer")
+        include classes() .withName("de.emesit.demo.I18nConfig")
+        
+        include packages().withName("de.emesit.demo.ui")
+        exclude classes() .withNameLike("de.emesit.demo.ui.AppLanguageWrapper1")
+        
+        include classes() .withName("de.emesit.demo.i18n.internal.I18nClassSupplier")
+        include classes() .withName("de.emesit.demo.i18n.internal.I18nBase")
+        include classes() .withName("de.emesit.demo.i18n.I18nBundleService")
+        include classes() .withName("de.emesit.demo.i18n.I18nLanguageSupplier")
+        include classes() .withName("de.emesit.demo.i18n.I18nLanguage")
+        include classes() .withName("de.emesit.demo.i18n.Language")
+        include classes() .withName("de.emesit.demo.i18n.I18n")
+        include classes() .withName("de.emesit.demo.i18n.TranslationDE")
+        include classes() .withName("de.emesit.demo.i18n.TranslationEN")
+        include classes() .withName("de.emesit.demo.i18n.TranslationES")
+        
+//        together {
+//            include classes().withName("de.emesit.demo.task.Demo20BetterApplication")
+////            include classes().withName("de.emesit.demo.task.TranslationInitializer")
+//            include classes().withName("de.emesit.demo.task.I18nConfig")
+//        include classes() .withName("de.emesit.demo.i18n.I18nLanguageSupplier")
+//       }
+
+//        together {
+//            include classes().withName("de.emesit.demo.i18n.I18nBundleService")
+//            include classes().withName("de.emesit.demo.i18n.I18nLanguageSupplier")
+//       }
+
+        exclude fields()
+        include methods().of("*.I18n")
+        include methods().of("*.I18nConfig").thatArePublic().orPackagePrivate().andNotStatic()
+        exclude methods().of("de.emesit.demo.TranslationInitializer")
+        exclude methods().of("de.emesit.demo.ui.*")
+        exclude methods().of("de.emesit.demo.task.*")
+        exclude methods().of("de.emesit.demo.i18n.Translation*")
+        exclude methods().of("de.emesit.demo.i18n.*Language")
+        
+        add      association().from("*.AppLanguageWrapper2")   .to("*.I18nLanguageSupplier").withTargetArrow(">").withLineCharacter(".").withStyle("right")
+        add      association().from("*.AppLanguageWrapper2")   .to("*.I18nBundleService")   .withTargetArrow(">").withLineCharacter(".").withStyle("right")
+        add      association().from("*.I18nConfig")            .to("*.I18nClassSupplier")   .withTargetArrow(">").withLineCharacter(".").withStyle("left")
+        add      association().from("*.I18nConfig")            .to("*.I18nLanguageSupplier").withTargetArrow(">").withLineCharacter(".").withStyle("right")
+        add      association().from("*.I18nConfig")            .to("*.I18nBundleService")   .withTargetArrow(">").withLineCharacter(".").withStyle("right")
+        add      association().from("*.I18nLanguageSupplier")  .to("*.I18nLanguage")        .withTargetArrow(">").withLineCharacter(".").withStyle("left")
+        add      association().from("*.I18n")                  .to("*.TranslationDE")       .withTargetArrow(">").withLineCharacter(".").withStyle("down")
+        add      association().from("*.I18n")                  .to("*.TranslationEN")       .withTargetArrow(">").withLineCharacter(".").withStyle("down")
+        add      association().from("*.I18n")                  .to("*.TranslationES")       .withTargetArrow(">").withLineCharacter(".").withStyle("down")
+
+        override extension  ().from("*.I18n")                  .to("*.I18nBase")    .withStyle("up")
+        override extension  ().from("*.Language")              .to("*.I18nLanguage").withStyle("down")
+        override association().from("*.AppLanguageWrapper2")   .to("*.I18n")        .withStyle("left")
+        override association().from("*.AppLanguageWrapper2")   .to("*.I18nLanguage").withStyle("up")
+        override association().from("*.TaskListView")          .to("*.I18n")        .withStyle("left")
+
+        add     association().from("*.Demo*Application")   .to("*.TranslationInitializer").withStyle("[hidden]right")
+        add      association().from("*.TranslationInitializer")     .to("*.I18nClassSupplier").withStyle("[hidden]right")
+        
+        add      association().from("*.I18nBundleService")     .to("*.I18nLanguageSupplier").withStyle("[hidden]up")
+        add      association().from("*.TaskListView")          .to("*.I18nLanguageSupplier").withStyle("[hidden]right")
+        add      association().from("*.TaskListView")          .to("*.I18nLanguage")        .withStyle("[hidden]right")
+        
+        
+//        add     association().from("*.Demo*Application")   .to("*.TaskListView")        .withStyle("[hidden]")
+//        add     association().from("*.Demo*Application")   .to("*.TranslationInitializer").withStyle("[hidden]")
+        
+//        add      association().from("*.Demo*Application")      .to("*.TranslationInitializer")      .withStyle("[hidden]down")
+//        add      association().from("*.TranslationInitializer")      .to("*.AppLanguageWrapper2")      .withStyle("[hidden]right")
+//        add      association().from("*.Demo*Application")      .to("*.I18nConfig").withStyle("[hidden]right")
+//        add      association().from("*.I18nConfig")            .to("*.AppLanguageWrapper2").withStyle("[hidden]right")
+//        add      association().from("*.I18nLanguageSupplier")            .to("*.I18nLanguage").withStyle("[hidden]down")
+//        add      association().from("*.I18nLanguage")            .to("*.I18nBundleService").withStyle("[hidden]left")
+//        add      association().from("*.I18nBase")            .to("*.I18nLanguageSupplier").withStyle("[hidden]right")
+//        add      association().from("*.I18nLanguage")            .to("*.TaskListView").withStyle("[hidden]left")
+//        add      association().from("*.Language")            .to("*.AppLanguageWrapper2").withStyle("[hidden]left")
+//        add      association().from("*.Language")            .to("*.I18nBundleService").withStyle("[hidden]right")
+        
+        
+//        override association().from("*.TaskListView")   .to("*.AppLanguageWrapper2").withStyle("left")
+        
+//        override association().from("*.AppLanguageWrapper2")   .to("*.I18nLanguage")          .withStyle("left")
+//        override association().from("*.TaskListView")          .to("*.AppLanguageWrapper2")   .withStyle("up")
+//        add      association().from("*.TranslationDE").to("*.TranslationEN")      .withStyle("[hidden]down")
+//        add      association().from("*.TranslationEN").to("*.TranslationES")      .withStyle("[hidden]down")
+        
+        remove   association().from("*.Language").to("*.Language")
+        
+        renderTo file('overview-application-and-ui.svg')
+    }
+    
+    classDiagram {
+        name("Class Overview")
+        style {
+            directionLR()
+            skinparam "packageStyle", "rectangle"
+        }
+        
+        include(packages().withName("de.emesit.demo"))
+        exclude(packages().withName("de.emesit.demo.ui"))
+        exclude(packages().withName("de.emesit.demo.task"))
+        exclude classes().withNameLike("de.emesit.demo.Demo20BetterApplication")
+        exclude classes().withNameLike("de.emesit.demo.i18n.SimpleTranslationService")
+        exclude classes().withNameLike("de.emesit.demo.TranslationInitializer*")
+        exclude classes().withNameLike("de.emesit.demo.JacksonConfig")
+        exclude classes().withNameLike("de.emesit.demo.*Controller")
+        exclude classes().withNameLike("de.emesit.demo.ui.AppLanguageWrapper1")
+        
+        exclude fields()
+        exclude methods()
+        
+        remove association().from("*.Language").to("*.Language")
+        
+        add association().from("*.I18n").to("*.TranslationDE").withTargetArrow(">").withLineCharacter(".")
+        add association().from("*.I18n").to("*.TranslationEN").withTargetArrow(">").withLineCharacter(".")
+        add association().from("*.I18n").to("*.TranslationES").withTargetArrow(">").withLineCharacter(".")
+        
+        add association().from("*.I18nBundle").to("*.I18nBundle\$I18nHandler").withTargetArrow(">").withLineCharacter(".")
+        
+//        add association().from("*.I18nConfig").to("*.I18nClassSupplier")    .withTargetArrow(">").withLineCharacter(".") //.withLabel("<<instantiate>>")
+//        add association().from("*.I18nConfig").to("*.I18nBundleService").withTargetArrow(">").withLineCharacter(".") //.withLabel("<<instantiate>>")
+//        add association().from("*.I18nConfig").to("*.I18nBundle")       .withTargetArrow(">").withLineCharacter(".") //.withLabel("<<use>>")
+        
+        
+        renderTo file('overview-classes.svg')
+    }
+//    classDiagram {
+//        name("Class Overview")
+//        include(packages().withName("de.emesit"))
+//        exclude classes().withNameLike("de.emesit.demo.Demo20BetterApplication")
+//        exclude classes().withNameLike("de.emesit.demo.TranslationInitializer*")
+//        exclude classes().withNameLike("de.emesit.demo.*Config")
+//        exclude classes().withNameLike("de.emesit.demo.*Controller")
+//        exclude classes().withNameLike("de.emesit.demo.ui.AppLanguageWrapper1")
+//        
+//        exclude fields() .of("*.Task")
+//        exclude methods().of("*.Task")
+//        exclude fields() .of("*.TaskService")
+//        exclude methods().of("*.TaskService")
+//        exclude fields().of("*.Language").thatAreStatic()
+//        
+//        exclude methods().of("*.I18n")
+//        add association().from("*.I18n").to("*.TranslationDE").withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+//        add association().from("*.I18n").to("*.TranslationEN").withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+//        add association().from("*.I18n").to("*.TranslationES").withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+//        
+//        renderTo file('class-overview.svg')
+//        writeTo file('class-overview.puml')
+//    }
+    
+    
+    // sieht ok aus:
+    classDiagram {
+        name("Packages i18n / i18n.internal")
+        style {
+            addStyle("<< InvocationHandler >> #line.bold").to(classes().withNameLike("*.I18nBundle\$I18nHandler"))
+            directionLR()
+            skinparam "packageStyle", "rectangle"
+            skinparam "nodesep", "60"
+            skinparam "ranksep", "120"
+        }
+
+        include packages().withName("de.emesit.demo.i18n")
+        include packages().withName("de.emesit.demo.i18n.internal")
+        exclude classes().withName("de.emesit.demo.i18n.SimpleTranslationService")
+        exclude classes().withNameLike("de.emesit.demo.i18n.*Language")
+        exclude classes().withNameLike("de.emesit.demo.*Controller")
+        
+        
+        add      association().from("*.I18nBundle")           .to("*.I18nClassSupplier")      .withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+        add      association().from("*.I18nBundle")           .to("*.I18nBundle\$I18nHandler").withTargetArrow(">").withLineCharacter(".").withStyle("right").withLabel(" <<instantiate>> ")
+        add      association().from("*.I18nBundle")           .to("*.I18nMethodReader")       .withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+        override association().from("*.I18nBundle")           .to("*.CustomTranslationService")     .withStyle("right")
+        override association().from("*.I18nBaseBundleService").to("*.I18nBundle")             .withStyle("up")
+        override extension  ().from("*.I18nBundleService")    .to("*.I18nBaseBundleService")  .withStyle("left")
+        override association().from("*.I18nMethodReader")     .to("*.I18nLanguageSupplier")   .withStyle("right")
+        add      association().from("*.I18n")                 .to("*.TranslationDE")          .withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+        add      association().from("*.I18n")                 .to("*.TranslationEN")          .withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+        add      association().from("*.I18n")                 .to("*.TranslationES")          .withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+
+        remove   association().from("*.I18nClassSupplier")    .to("*.I18nBase")
+        
+        exclude methods().of("*.I18n")
+        exclude methods().of("*.I18nBundle\$I18nHandler")
+        
+        renderTo file('package-i18n-internal.svg')
+    }
+    
+//    classDiagram {
+//        name("Packages i18n / i18n.internal")
+//        style {
+//            addStyle("<< InvocationHandler >> #line.bold").to(classes().withNameLike("*.I18nBundle\$I18nHandler"))
+//            directionLR()
+//            skinparam "nodesep", "100"
+//        }
+//
+////        include classes().withName("de.emesit.demo.I18nConfig")
+//        include packages().withName("de.emesit.demo.i18n")
+//        include packages().withName("de.emesit.demo.i18n.internal")
+//        exclude classes().withName("de.emesit.demo.i18n.SimpleTranslationService")
+//        exclude classes().withNameLike("de.emesit.demo.i18n.*Language")
+//        exclude classes().withNameLike("de.emesit.demo.*Controller")
+//        
+////        add association().from("*.I18nConfig").to("*.I18nClassSupplier")    .withTargetArrow(">").withLineCharacter(".").withLabel("<<instantiate>>")
+////        add association().from("*.I18nConfig").to("*.I18nBundleService").withTargetArrow(">").withLineCharacter(".").withStyle("down").withLabel("<<instantiate>>")
+////        add association().from("*.I18nConfig").to("*.I18nBundle")       .withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+//        
+//        
+////        add association().from("*.I18nClassSupplier").to("*.I18nConfig").withTargetArrow(">").withLineCharacter("---").withStyle("[hidden]")
+//        
+//        add      association().from("*.I18nBundle").to("*.I18nClassSupplier").withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+//        add      association().from("*.I18nBundle").to("*.I18nBundle\$I18nHandler").withTargetArrow(">").withLineCharacter(".").withStyle("right").withLabel(" <<instantiate>> ")
+//        add      association().from("*.I18nBundle").to("*.I18nMethodReader").withTargetArrow(">").withLineCharacter(".").withStyle("up").withLabel("<<use>>")
+////        override association().from("*.I18nBundle").to("*.CustomTranslationService").withStyle("left")
+////        
+////        override association().from("*.I18nBaseBundleService").to("*.I18nBundle").withStyle("up")
+////        
+//        override extension().from("*.I18nBundleService").to("*.I18nBaseBundleService").withStyle("right")
+////        override association().from("*.I18nBaseBundleService").to("*.I18nBundle").withStyle("right")
+//
+//        
+//        remove association().from("*.I18nClassSupplier").to("*.I18nBase")
+//        
+//        
+////        exclude fields().of("de.emesit.demo.i18n.Language")
+////        exclude methods().of("de.emesit.demo.i18n.Language")
+////        remove association().from("*.Language").to("*.Language")
+//        
+//        exclude methods().of("*.I18n")
+//        add association().from("*.I18n").to("*.TranslationDE").withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+//        add association().from("*.I18n").to("*.TranslationEN").withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+//        add association().from("*.I18n").to("*.TranslationES").withTargetArrow(">").withLineCharacter(".").withLabel("<<use>>")
+//
+//        renderTo file('package-i18n-internal.svg')
+//    }
+}
+

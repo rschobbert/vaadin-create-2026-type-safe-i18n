@@ -1,0 +1,59 @@
+plugins {
+    id 'java-library'
+    id 'jacoco'
+    id 'eclipse'
+}
+
+def realPrjDirName = project.projectDir.name
+layout.buildDirectory.set(rootProject.layout.buildDirectory.dir(realPrjDirName))
+
+java {
+    toolchain {
+        //languageVersion = JavaLanguageVersion.of("${libs.versions.java.get()}")
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
+}
+
+// lazy configuration of task 'compileJava':
+tasks.named('compileJava', JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+// lazy configuration of task 'test':
+tasks.named('test', Test) {
+    ignoreFailures = false
+    finalizedBy tasks.named('jacocoTestReport')
+    useJUnitPlatform()
+}
+
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+// lazy configuration of task 'jacocoTestReport':
+tasks.named('jacocoTestReport', JacocoReport) {
+    dependsOn tasks.named('test') 
+}
+
+dependencies {
+    // import the springboot and vaadin BOMs for version resolving
+//    api platform(libs.bom.springboot)
+//    api platform(libs.bom.vaadin)
+}
+
+eclipse {
+    classpath {
+        // Fügt die Pfade sauber hinzu, selbst wenn das Projekt in settings.gradle umbenannt wurde
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+
+// Falls Eclipse nach wie vor bockig ist, hilft dieser zusätzliche Block am Ende der Datei,
+// um die Ordner manuell in die Eclipse-Struktur zu "drücken":
+if (plugins.hasPlugin('java-test-fixtures')) {
+    tasks.named('eclipseClasspath') {
+        // Wartet, bis Gradle die Source-Verzeichnisse für die Test-Fixtures berechnet hat
+        dependsOn tasks.named('compileTestFixturesJava')
+    }
+}

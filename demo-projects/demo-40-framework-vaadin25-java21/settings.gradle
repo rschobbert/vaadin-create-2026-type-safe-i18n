@@ -1,0 +1,32 @@
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+    }
+}
+
+def prjPrefix = "demo-40-framework-"
+
+// keep the root project name, otherwise git will get confused:
+rootProject.name = "demo-40-framework-vaadin25-java21"
+
+def subProjects = [
+    'core'      : 'easi18n-core',
+    'sbootstrt' : 'easi18n-sbootstrt',
+    'vaadin'    : 'easi18n-vaadin',
+    'vaasboot'  : 'easi18n-vaadin-sboot',
+    'demo'      : 'easi18n-demo'
+]
+
+def fullMapping = [:]
+
+subProjects.each { shortName, folderName ->
+    def subPrjName = "${prjPrefix}${shortName}"
+    
+    include ":${subPrjName}"
+    project(":${subPrjName}").projectDir = file(folderName)
+    
+    fullMapping[shortName] = ":${subPrjName}"
+}
+
+gradle.ext.subPrj = fullMapping

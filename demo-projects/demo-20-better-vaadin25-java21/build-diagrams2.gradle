@@ -1,0 +1,228 @@
+// This build file gets called, by calling gradle build with 'generateDiagrams' task.
+// Selecting appropriate buildfile is done in settings.gradle
+
+
+plugins {
+    alias(libs.plugins.plantuml)
+}
+
+description = 'generate class diagrams with plantuml'
+
+
+ext {
+    projectMainPackage = 'de.emesit.demo'
+    diagramOutput     = 'doc/generated'
+    renderFormats     = ['svg']
+    createdSvgFiles   = []
+    diagramsHtmlFile  = 'diagrams.html'  // write an html file for local viewing
+    diagramsMdFile    = 'diagrams.md'    // write a markdown file for online viewing e.g. github
+}
+
+configurations {
+  plantuml
+}
+
+dependencies {
+  plantuml  "net.sourceforge.plantuml:plantuml-mit:1.2026.8"
+}
+
+tasks.register('generateDiagrams') {
+    dependsOn generateClassDiagrams
+    // because of configurationCache, we cannot directly access project.createdSvgFiles
+    // in doLast block, therefore define a variable here
+    List svgFiles = project.createdSvgFiles
+    File htmlFile = new File(project.diagramOutput, project.diagramsHtmlFile)
+    File mdFile   = new File(project.diagramOutput, project.diagramsMdFile)
+    doLast {
+        new SvgOverviewHtmlFile(file:htmlFile, taskName:name, svgFiles:svgFiles).write()
+        println "wrote [$htmlFile]"
+        
+        new SvgOverviewMdFile  (file:mdFile, taskName:name, svgFiles:svgFiles).write()
+        println "wrote [$mdFile]"
+    }
+}
+
+classDiagrams {
+  renderClasspath  configurations.plantuml
+  defaults {
+    style {
+      directionLR()
+      skinparam "linetype", "ortho"
+    }
+  }
+  
+  diagram {
+    def pkg = projectMainPackage
+    name "Package $pkg"
+    include packages().withName(pkg)
+    
+//    exclude packages().withName("io.gitlab.plunts.gradle.plantuml.plugin.relation")
+//    exclude packages().withName("io.gitlab.plunts.gradle.plantuml.plugin.matcher")
+//    // subpackage 'output' is NOT excluded, since it has no diagram on its own.
+//    // It makes more sense to put it with the main package
+//    
+//    // exclude PlantUmlPlugin and ClassDiagramsExtension, since we will put
+//    // them with a more detailed explanation in a separate diagram
+//    exclude classes().withNameLike("*.ClassDiagramsExtension")
+//    exclude classes().withNameLike("*.PlantUmlPlugin")
+//    
+//    // exclude these for now (let's see where if and where we will put these):
+//    exclude classes().withNameLike("*.PackageDiagramDefaults*Style")
+//    exclude classes().withNameLike("*.PackageDiagramDefaults*ElementNote")
+//    exclude classes().withNameLike("*.ClassDiagramDefaults?ClassGrouping")
+//    
+//    exclude classes().withNameLike("*ElementNoteBuilder")
+//    exclude classes().withNameLike("*ElementStyleBuilder")
+//    exclude classes().withNameLike("*LocalRenderer")
+//    exclude classes().withNameLike("*PackageNoteBuilder")
+//    exclude classes().withNameLike("*ServerRenderer")
+//    exclude classes().withNameLike("*Viewpoint")
+//    
+//    // the following are just utility classes, which do not need to appear for the 'big picture'
+//    exclude classes().withNameLike("*.TaskLogger")
+//    exclude classes().withNameLike("*.RegExUtil")
+//    
+//    exclude fields()
+//    exclude methods().thatAreAccessors()
+//    
+//    add association().from("*.GenerateClassDiagramsTask").to("*.ClassDiagramBuilder").withStyle("left")
+//    add association().from("*.GenerateClassDiagramsTask").to("*.PackageDiagramBuilder").withStyle("left")
+//    override extension().from("*.PackageDiagram").to("*.PackageDiagramDefaults").withStyle("right")
+    
+//    style {
+//      addStyle("#pink ##[bold]red").to(classes().withNameLike("*.GenerateClassDiagramsTask"))
+//    }
+    
+//    // use groovy multiline string combined with 'stripMargin() method (default margin character is '|')
+//    // to make the note a little bit more readable right here
+//    note("""<size:18><b>PlantUmlPlugin</b> creates <b>ClassDiagramsExtension</b></size>
+//           |<size:18>and registers <b>GenerateClassDiagramsTask</b></size>
+//           |""".stripMargin())
+//    .topOf(classes("*.GenerateClassDiagramsTask"))
+    
+    renderFormats.each { renderTo toRenderFile(pkg, 'overview', it) }
+  }
+  
+//  diagram {
+//    def pkg = 'io.gitlab.plunts.gradle.plantuml.plugin.relation'
+//    name "Package $pkg"
+//    include packages().withName(pkg)
+//    renderFormats.each { renderTo toRenderFile(pkg, 'overview', it) }
+//  }
+  
+//  diagram {
+//    def pkg = 'io.gitlab.plunts.gradle.plantuml.plugin.matcher'
+//    name "Package $pkg"
+//    include packages().withName(pkg)
+//    
+//    // without any extra configuration plantuml places the ClassGraphConfiguration
+//    // in an unfavorable location. By adding a different direction to the relation
+//    // we can force a different layout. In this case 'right' on this relation gave
+//    // the desired result.
+//    // You can also try setting the direction to 'left' or 'down' and you will see,
+//    // that these do not change the layout.
+//    // (since 'up' is the default, that one doesn't make sense to set explicitely)
+//    // Sometimes it is just a matter of trying out...
+//    override extension().from("*.PackageMatcher").to("*.ClassGraphConfiguration").withStyle("right")
+//    
+//    renderFormats.each { renderTo toRenderFile(pkg, 'overview', it) }
+//  }
+}
+
+//***********************************************************************
+// utility method to create and collect filenames
+// of rendered diagrams, in order to generate an html page
+// for viewing
+// ----------------------------------------------------------------------
+File toRenderFile(String pkg, String diagramType, String renderFormat) {
+    if ( ! pkg ==~ /${projectMainPackage}(\..*)?/) {
+        throw new GradleException("plugin package does not match the configure package in ext.projectMainPackage: '$projectMainPackage'")
+    }
+    
+    String subpkg = (pkg == projectMainPackage) ? '' : (pkg - projectMainPackage)[1..-1] // if it is a subpackage, cut the leading '.'
+    
+    // create a filename based on the method params
+    // if subpkg is empty, we omit the second '-'
+    String filename = "plugin-${subpkg}${subpkg?'-':''}overview.$renderFormat"
+    // add the file to our list
+    createdSvgFiles << filename
+    file("$diagramOutput/$filename")
+}
+
+
+
+//***********************************************************************
+// utility base class for SvgOverviewMdFile and SvgOverviewHtmlFile
+// ----------------------------------------------------------------------
+
+class SvgOverviewFile {
+    File   file
+    String heading = 'Class Diagrams of the plantuml-gradle-plugin'
+    String intro = '''The following are diagrams, generated with the plantuml-gradle-plugin
+                     |for a better understanding of the architecture of the plugin.
+                     |To create the svg diagrams and this file call:'''.stripMargin()
+    String exampleCall
+    String taskName = ''
+    
+    List svgFiles
+    
+    void write() {
+        file.withWriter { w ->
+            write(w)
+        }
+    }
+    void write(Writer w) {
+    }
+}
+
+//***********************************************************************
+// utility class to write a markdown file for viewing the rendered svgs
+// ----------------------------------------------------------------------
+
+@groovy.transform.MapConstructor( includeSuperProperties = true,  post = { exampleCall = './gradlew '+taskName } )
+class SvgOverviewMdFile extends SvgOverviewFile {
+    void write(Writer w) {
+        w << """# $heading
+            |
+            |$intro
+            |
+            |`$exampleCall`
+            |""".stripMargin()
+        svgFiles.each { s ->
+            w << "\n---"
+            w << "\n  "
+            w << "\n### $s"
+            w << "\n"
+            w << "\n![$s](./$s)"
+            w << "\n"
+            w << "\n### <a href='$s'>Show only $s</a>\n"
+        }
+    }
+}
+
+//***********************************************************************
+// utility class to write an html file for viewing the rendered svgs
+// ----------------------------------------------------------------------
+
+@groovy.transform.MapConstructor( includeSuperProperties = true,  post = { exampleCall = './gradlew '+taskName } )
+class SvgOverviewHtmlFile extends SvgOverviewFile {
+    void write(Writer w) {
+        w << """<html>
+            |<body>
+            |<h1>$heading</h1>
+            |<p>$intro</p>
+            |<code>$exampleCall</code>
+            |""".stripMargin()
+        svgFiles.each { s ->
+            w << "\n    <hr>"
+            w << "\n    <br>"
+            w << "\n    <h3>$s</h3>"
+            w << "\n    <img src='$s' alt='$s' />"
+            w << "\n    <br>"
+            w << "\n    <h3><a href='$s'>Show only $s</a></h3>\n"
+        }
+        w << """</body>
+            |</html>
+            """.stripMargin()
+    }
+}

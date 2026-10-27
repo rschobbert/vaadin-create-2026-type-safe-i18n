@@ -1,0 +1,89 @@
+// * the repositories definition is in 'settings.gradle'
+// * the dependencies definition is found in 'gradle/libs.versions.toml'
+// * this buildfile was written for gradle 8.14.X
+// * the task 'generateDiagrams' calls 'build-diagrams.gradle', see 'settings.gradle'
+
+plugins {
+    id 'java'
+    alias(libs.plugins.springboot)
+    alias(libs.plugins.vaadin)
+}
+
+
+
+group = 'de.emesit'
+version = '1.0.0'
+
+// To suppress the gradle warning
+//   "Invocation of Task.project at execution time has been deprecated"
+// we have to save the project name and version in a separate variable
+// before using it in the 'usage' task:
+def appName    = project.name
+def appVersion = project.version
+
+defaultTasks 'usage'
+
+tasks.register("usage") {
+    group = "Help"
+    description = "Shows useful information on how to build and run this project."
+
+    doLast {
+        println("""
+        ====================================================================
+        APPLICATION ${appName}
+        ====================================================================
+        run this project in development mode:
+          ./gradlew  bootRun
+          or
+          run it from the IDE
+        
+        build/run production-ready (calls vaadinBuildFrontend):
+          ./gradlew -Pvaadin.productionMode=true  clean build
+          then
+          java -jar build/libs/${appName}-${appVersion}.jar --vaadin.productionMode=true
+        
+        ====================================================================
+        """.stripIndent())
+    }
+}
+
+vaadin {
+    // to use '-Pvaadin.productionMode' we need the entry below, otherwise only '-Dvaadin.productionMode' is possible
+    productionMode = project.hasProperty('vaadin.productionMode') ? project.property('vaadin.productionMode').toBoolean() : false
+}
+
+java {
+    toolchain {
+        // read the java version from our gradle/libs.versions.toml file:
+        languageVersion = JavaLanguageVersion.of("${libs.versions.java.get()}")
+    }
+}
+
+dependencies {
+    
+    // see gradle/libs.versions.toml for the definition/versions of the libs/bundles/plugins
+    
+    implementation      platform(libs.bom.springboot)
+    implementation      platform(libs.bom.vaadin)
+    
+    // IMPORTANT: we have to register the BOMs for 'developmentOnly' configuration
+    // otherwise when doing a build, the 'bootJar' task will fail, since it
+    // does not have any version information.
+    // In the past this was automatically done by the 'io.spring.dependency-management'
+    // plugin, but since we do not use that anymore because of the native gradle
+    // support for BOMs, we have to do this explicit declaration.
+    // When running with 'bootRun' or from the IDE, everythings works fine,
+    // the problem only shows when doing a build on the commandline.
+    developmentOnly     platform(libs.bom.springboot)
+    developmentOnly     platform(libs.bom.vaadin)
+
+    implementation      libs.bundles.app.impl
+    runtimeOnly         libs.bundles.app.rtonly
+    testImplementation  libs.bundles.app.testimpl
+    developmentOnly     libs.bundles.app.devonly
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+

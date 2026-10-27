@@ -1,0 +1,54 @@
+# ========== versions =====================================================================
+
+[versions]
+
+java       = "21"
+springboot = "4.1.1"
+vaadin     = "25.3.3"
+
+plantuml       = "1.2026.8"
+plantumlPlugin = "2.4.1"
+
+# ========== plugins ======================================================================
+
+[plugins]
+
+springboot = { id = "org.springframework.boot" , version.ref = "springboot"     }
+vaadin     = { id = "com.vaadin"               , version.ref = "vaadin"         }
+plantuml   = { id = "io.gitlab.plunts.plantuml", version.ref = "plantumlPlugin" }
+
+
+# ========== libraries ====================================================================
+
+[libraries]
+
+bom-springboot  = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springboot" }
+bom-vaadin      = { group = "com.vaadin"              , name = "vaadin-bom"              , version.ref = "vaadin"     }
+
+sbs-vaadin      = { group = "com.vaadin"              , name = "vaadin-spring-boot-starter"      }
+sbs-web         = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc"      }
+sbs-jpa         = { group = "org.springframework.boot", name = "spring-boot-starter-data-jpa"    }
+h2              = { group = "com.h2database"          , name = "h2"                              }
+
+sbs-test        = { group = "org.springframework.boot", name = "spring-boot-starter-test"        }
+sbs-webmvctest  = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc-test" }
+
+junit-launcher  = { group = "org.junit.platform"      , name = "junit-platform-launcher"         }
+
+sboot-dev       = { group = "org.springframework.boot", name = "spring-boot-devtools"  }
+vaadin-dev      = { group = "com.vaadin"              , name = "vaadin-dev"            }
+h2console       = { group = "org.springframework.boot", name = "spring-boot-h2console" }
+
+plantuml = { module = "net.sourceforge.plantuml:plantuml-mit", version.ref = "plantuml"}
+
+
+# ========== bundles ======================================================================
+
+[bundles]
+
+app-impl        = [ "sbs-vaadin", "sbs-web", "sbs-jpa" ]
+app-rtonly      = [ "h2" ]
+
+app-testimpl    = [ "sbs-test", "sbs-webmvctest" ]
+
+app-devonly     = [ "vaadin-dev", "sboot-dev", "h2console" ]

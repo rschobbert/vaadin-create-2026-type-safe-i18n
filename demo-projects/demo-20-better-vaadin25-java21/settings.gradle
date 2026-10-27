@@ -1,0 +1,26 @@
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'demo-20-better-vaadin25-java21'
+
+
+// Generation of class diagrams (with plantuml) is in the seperate buildfile 'build-diagrams.gradle'.
+// Whenever the build is called with task 'generateDiagrams' like this:
+//   ./gradlew generateDiagrams
+// we replace the buildFileName below. In all other cases, the build is called normally.
+
+def extraTasks = [ 'generateDiagrams' : 'build-diagrams.gradle' ]
+
+if ( extraTasks.keySet().find { startParameter.taskNames.contains(it) } ) {
+    
+    // this code block is only executed, if 'generateDiagrams' task is used:
+    
+    if (startParameter.taskNames.size() > 1) {
+        throw new GradleException('Task must be called on its own. Multiple tasks are not allowed in the case of ' + extraTasks.keySet())
+    }
+    rootProject.setBuildFileName( extraTasks[(startParameter.taskNames[0])] )
+}

@@ -1,0 +1,7 @@
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+    }
+}
+rootProject.name = 'demo-10-simple-vaadin14-java8'

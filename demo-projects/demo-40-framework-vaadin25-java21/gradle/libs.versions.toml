@@ -1,0 +1,79 @@
+# ========== versions =====================================================================
+
+[versions]
+
+java       = "21"
+springboot = "4.1.1"
+vaadin     = "25.3.3"
+
+slf4j   = '2.0.19'
+logback = '1.5.28'
+junit   = '6.0.3'
+jacoco  = '0.8.15'
+
+plantuml       = "1.2026.8"
+plantumlPlugin = "2.4.1"
+
+
+# ========== plugins ======================================================================
+
+[plugins]
+
+springboot = { id = "org.springframework.boot" , version.ref = "springboot"     }
+vaadin     = { id = "com.vaadin"               , version.ref = "vaadin"         }
+plantuml   = { id = "io.gitlab.plunts.plantuml", version.ref = "plantumlPlugin" }
+
+
+# ========== libraries ====================================================================
+
+[libraries]
+
+bom-springboot  = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springboot" }
+bom-vaadin      = { group = "com.vaadin"              , name = "vaadin-bom"              , version.ref = "vaadin"     }
+bom-junit       = { group = "org.junit"               , name = "junit-bom"               , version.ref = "junit"      }
+
+slf4j-api       = { group = "org.slf4j"               , name = "slf4j-api"               , version.ref = "slf4j"      }
+logback         = { group = "ch.qos.logback"          , name = "logback-classic"         , version.ref = "logback"    }
+plantuml        = { group = "net.sourceforge.plantuml", name = "plantuml-mit"            , version.ref = "plantuml"   }
+
+vaadin-core     = { group = "com.vaadin"              , name = "vaadin-core"                       }
+sbs-vaadin      = { group = "com.vaadin"              , name = "vaadin-spring-boot-starter"        }
+
+sbs-web         = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc"        }
+sbs-jpa         = { group = "org.springframework.boot", name = "spring-boot-starter-data-jpa"      }
+sbs-validation  = { group = "org.springframework.boot", name = "spring-boot-starter-validation"    }
+h2              = { group = "com.h2database"          , name = "h2"                                }
+
+sbs-jpatest     = { group = "org.springframework.boot", name = "spring-boot-starter-data-jpa-test" }
+sbs-webmvctest  = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc-test"   }
+vaadin-test     = { group = "com.vaadin"              , name = "browserless-test-spring"           }
+
+junit-jupiter   = { group = "org.junit.jupiter"       , name = "junit-jupiter"                     }
+junit-launcher  = { group = "org.junit.platform"      , name = "junit-platform-launcher"           }
+
+sboot-dev       = { group = "org.springframework.boot", name = "spring-boot-devtools"  }
+vaadin-dev      = { group = "com.vaadin"              , name = "vaadin-dev"            }
+h2console       = { group = "org.springframework.boot", name = "spring-boot-h2console" }
+
+
+# ========== bundles ======================================================================
+
+[bundles]
+
+core-api           = [ "slf4j-api"      ]
+core-impl          = [ "logback"        ]
+core-testimpl      = [ "junit-jupiter"  ]
+core-testrtonly    = [ "junit-launcher" ]
+
+sbootstrt-api      = [ "sbs-web"                       ]
+sbootstrt-testimpl = [ "sbs-jpatest", "sbs-webmvctest" ]
+
+vaadin-api         = [ "vaadin-core" ]
+
+vaasboot-api       = [ "sbs-web", "sbs-jpa", "sbs-validation", "sbs-vaadin" ]
+vaasboot-testimpl  = [ "sbs-jpatest", "sbs-webmvctest", "vaadin-test"       ]
+
+demo-impl          = [ "sbs-web", "sbs-jpa", "sbs-validation", "sbs-vaadin" ]
+demo-devonly       = [ "vaadin-dev", "sboot-dev", "h2console"               ]
+demo-testimpl      = [ "sbs-jpatest", "sbs-webmvctest", "vaadin-test"       ]
+demo-rtonly        = [ "h2"                                                 ]

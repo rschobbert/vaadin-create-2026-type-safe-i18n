@@ -1,0 +1,120 @@
+//
+// --- BUILD CLASS DIAGRAMS ---
+//
+// Separate buildfile for generating class diagrams, to not 'pollute'
+// the standard buildfile with plantuml dependencies.
+// See also comments in settings.gradle, where the actual switching is done.
+//
+
+plugins {
+    id 'java'
+    alias(libs.plugins.springboot)
+    alias(libs.plugins.vaadin)
+    alias(libs.plugins.plantuml)
+}
+
+// to make sure, this buildfile is called the standard way via
+//   ./gradlew generateDiagrams
+// and not with '-b', which is still possible in gradle 8.
+// (in gradle 9 this argument has been removed)
+// The switching of the buildfile is done in settings.gradle!
+if (gradle.startParameter.taskNames.size() != 1 || gradle.startParameter.taskNames[0] != 'generateDiagrams') {
+    throw new GradleException('You cannot use this buildfile standalone with "-b" argument')
+}
+
+description = 'generate class diagrams with plantuml'
+
+configurations { 
+    plantuml
+}
+
+dependencies {
+    plantuml        libs.plantuml
+    implementation  platform(libs.bom.springboot)
+    implementation  platform(libs.bom.vaadin)
+    implementation  libs.bundles.app.impl
+}
+
+classDiagrams {
+    renderClasspath  configurations.plantuml
+    defaults {
+        style {
+            skinparam "linetype", "ortho"
+        }
+    }
+    
+    
+    classDiagram {
+        name("UI Package / Application Overview")
+        style {
+            hidePackages()
+            
+            define "SpringbootApplicationColor", "#back:PapayaWhip;line.bold"
+            define "UiClassColor", "#back:SandyBrown;line.bold"
+            addStyle("<< SpringBootApplication >> SpringbootApplicationColor").to(classes().withNameLike("de.emesit.demo.Demo*Application"))
+            addStyle("<< UIClass >> UiClassColor").to(classes().withNameLike("de.emesit.demo.ui.*"))
+            
+        }
+        include(packages().withName("de.emesit.demo.ui"))
+        
+        include(packages().withName("de.emesit.demo.task"))
+        
+        include classes().withNameLike("de.emesit.demo.Demo*Application")
+        include classes().withName("de.emesit.demo.i18n.I18nBundleService")
+        include classes().withName("de.emesit.demo.i18n.Language")
+        include classes().withName("de.emesit.demo.i18n.I18n")
+        include classes().withName("de.emesit.demo.i18n.TranslationDE")
+        include classes().withName("de.emesit.demo.i18n.TranslationEN")
+        include classes().withName("de.emesit.demo.i18n.TranslationES")
+        
+        exclude fields()
+        include methods().of("*.I18n")
+        exclude methods().of("de.emesit.demo.ui.*")
+        exclude methods().of("de.emesit.demo.task.*")
+        exclude methods().of("de.emesit.demo.i18n.Translation*")
+        exclude methods().of("de.emesit.demo.i18n.Language")
+        
+        remove association().from("*.Language").to("*.Language")
+        
+        add association().from("*.AppLanguageWrapper").to("*.I18nBundleService").withTargetArrow(">").withLineCharacter(".")
+        
+        add association().from("*.I18n").to("*.TranslationDE").withTargetArrow(">").withLineCharacter(".")
+        add association().from("*.I18n").to("*.TranslationEN").withTargetArrow(">").withLineCharacter(".")
+        add association().from("*.I18n").to("*.TranslationES").withTargetArrow(">").withLineCharacter(".")
+        
+        renderTo file('overview-application-and-ui.svg')
+    }
+    
+    classDiagram {
+        name("Packages i18n / i18n.internal")
+        style {
+            directionLR()
+            
+            addStyle("#back:palegreen;line.bold").to(classes().withNameLike("*.I18nBundle"))
+            addStyle("#line.bold").to(classes().withNameLike("*.I18nBundleService"))
+            addStyle("<< InvocationHandler >> #line.bold").to(classes().withNameLike("*.I18nBundle\$I18nHandler"))
+        }
+        
+        include(packages().withName("de.emesit.demo"))
+        
+        exclude(packages().withName("de.emesit.demo.ui"))
+        exclude(packages().withName("de.emesit.demo.task"))
+        exclude classes().withNameLike("de.emesit.demo.Demo*Application")
+        
+        include fields().of("*.I18nBundle").thatArePackagePrivate()
+        exclude fields().of("*.Language")
+        include methods().of("*.I18n")
+        exclude methods().of("de.emesit.demo.i18n.Language")
+        
+        remove association().from("*.Language").to("*.Language")
+        
+        add association().from("*.I18n").to("*.TranslationDE").withTargetArrow(">").withLineCharacter(".")
+        add association().from("*.I18n").to("*.TranslationEN").withTargetArrow(">").withLineCharacter(".")
+        add association().from("*.I18n").to("*.TranslationES").withTargetArrow(">").withLineCharacter(".")
+        
+        add association().from("*.I18nBundle").to("*.I18nBundle\$I18nHandler").withTargetArrow(">").withLineCharacter(".").withStyle("right").withLabel(" <<instantiate>> ")
+        add association().from("*.I18nBundle").to("*.I18nMethodReader").withTargetArrow(">").withLineCharacter(".").withStyle("left").withLabel(" <<use>> ")
+        
+        renderTo file('package-i18n-internal.svg')
+    }
+}

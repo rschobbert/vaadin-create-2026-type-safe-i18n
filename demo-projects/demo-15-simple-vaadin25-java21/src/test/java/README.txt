@@ -1,0 +1,1 @@
+for tests see demo-project 'demo-20-better-vaadin25-java21'
