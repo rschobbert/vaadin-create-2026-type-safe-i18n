@@ -21,18 +21,3 @@ There you will also find a more detailed description of the project.
 
 The long answer is: I am still on vaadin 14, because that customer is still working with weblogic 12 which limits java to version 8 and vaadin to version 14. Work is ongoing in that company to
 migrate all applications to weblogic 14, and hopefully soon to weblogic 15. But both Weblogic 14.1.2 and 15.1.1 still limit vaadin to version 23, which is a pitty.
-
-
-This project is the similar to Demo Project 1. Compared to Project 1, it
-* uses Java 21, Springboot 4 and Vaadin 25
-* uses a version catalog (gradle/libs.versions.toml) instead of the basic dependency setup directly in build.gradle
-* uses the plantuml-gradle-plugin to generate the UML diagrams
-
-### Reference Documentation
-For further reference, please consider the following:
-
-* [Vaadin v25 Documentation](https://vaadin.com/docs/v25)
-* [SpringBoot 4.1 Documentation](https://docs.spring.io/spring-boot/4.1.1/gradle-plugin/packaging-oci-image.html)
-* [Gradle 8.14 Documentation](https://docs.gradle.org/8.14.6/userguide/userguide.html)
-* [Plantuml Gradle Plugin](https://gitlab.com/Plunts/plantuml-gradle-plugin)
-
