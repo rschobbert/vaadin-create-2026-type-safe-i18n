@@ -99,6 +99,9 @@ public class I18nMethodReader {
                 va[language.getIndex()] = staticTranslation;
                 translationCount++;
                 translatedLanguages.add(language);
+            } else {
+                LOG.info("translation in language [{}] for [{}] missing", language, m.getName());
+                translatedLanguages.remove(language);
             }
         }
         if (translationCount == 0) {

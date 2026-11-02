@@ -1,4 +1,4 @@
-rootProject.name='demo-30-buildSrc'
+rootProject.name='demo-40-buildSrc'
 
 dependencyResolutionManagement {
     versionCatalogs {

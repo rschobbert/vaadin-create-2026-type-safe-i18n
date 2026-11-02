@@ -101,6 +101,7 @@ public interface I18n extends I18nBase {
 
     @TranslationDE("Überladen ohne Parameter")
     @TranslationEN("Overloaded without parameters")
+    @TranslationES("Sobrecargado sin parámetros")
     String overloaded();
 
     // the following method will result in an exception, because
