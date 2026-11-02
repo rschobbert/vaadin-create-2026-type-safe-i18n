@@ -110,6 +110,9 @@ project(gradle.subPrj.vaasboot) {
     apply plugin: 'org.springframework.boot'
     apply plugin: 'com.vaadin'
     
+    tasks.named('bootJar') { enabled = false }
+    tasks.named('jar')     { enabled = true  }
+
     dependencies {
         api             project(gradle.subPrj.vaadin)
         api             project(gradle.subPrj.sbootstrt)
@@ -127,6 +130,9 @@ project(gradle.subPrj.demo) {
     vaadin {
         // to use '-Pvaadin.productionMode' we need the entry below, otherwise only '-Dvaadin.productionMode' is possible
         productionMode = providers.gradleProperty('vaadin.productionMode').map { it.toBoolean() }.getOrElse(false)
+    }
+    springBoot {
+        mainClass = 'de.emesit.demo.Demo40BetterApplication'
     }
 
     dependencies {
